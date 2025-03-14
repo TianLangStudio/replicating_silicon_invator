@@ -11,11 +11,12 @@ use components::{
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 use std::collections::HashSet;
+use crate::exercise::ExercisePlugin;
 
 mod components;
 mod enemy;
 mod player;
-
+mod exercise;
 // region:    --- Asset Constants
 
 const PLAYER_SPRITE: &str = "player_a_01.png";
@@ -106,6 +107,7 @@ fn main() {
 		}))
 		.add_plugins(PlayerPlugin)
 		.add_plugins(EnemyPlugin)
+		.add_plugins(ExercisePlugin)
 		.add_systems(Startup, setup_system)
 		.add_systems(Update, movable_system)
 		.add_systems(Update, player_laser_hit_enemy_system)
