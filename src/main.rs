@@ -1,5 +1,7 @@
 #![allow(unused)] // silence unused warnings while exploring (to comment out)
 
+use crate::exercise::{Exercise, ExercisePlugin, QuestionOption};
+use bevy::log;
 use bevy::math::bounding::IntersectsVolume;
 use bevy::math::{bounding::Aabb2d, Vec3Swizzles};
 use bevy::prelude::*;
@@ -11,12 +13,11 @@ use components::{
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 use std::collections::HashSet;
-use crate::exercise::ExercisePlugin;
 
 mod components;
 mod enemy;
-mod player;
 mod exercise;
+mod player;
 // region:    --- Asset Constants
 
 const PLAYER_SPRITE: &str = "player_a_01.png";
@@ -28,11 +29,11 @@ const ENEMY_SPRITE: &str = "enemy_a_01.png";
 const ENEMY_SIZE: (f32, f32) = (144., 75.);
 const ENEMY_LASER_SPRITE: &str = "laser_b_01.png";
 const ENEMY_LASER_SIZE: (f32, f32) = (17., 55.);
-
+const MAX_ENEMY: u32 = 8;
 const EXPLOSION_SHEET: &str = "explo_a_sheet.png";
 const EXPLOSION_LEN: usize = 16;
 
-const SPRITE_SCALE: f32 = 0.5;
+const SPRITE_SCALE: f32 = 1.2;
 
 // endregion: --- Asset Constants
 
@@ -41,7 +42,6 @@ const SPRITE_SCALE: f32 = 0.5;
 const BASE_SPEED: f32 = 500.;
 
 const PLAYER_RESPAWN_DELAY: f64 = 2.;
-const ENEMY_MAX: u32 = 2;
 const FORMATION_MEMBERS_MAX: u32 = 2;
 
 // endregion: --- Game Constants
@@ -52,6 +52,9 @@ pub struct WinSize {
 	pub w: f32,
 	pub h: f32,
 }
+
+#[derive(Resource)]
+pub struct MaxEnemyCount(pub u32);
 
 #[derive(Resource)]
 struct GameTextures {
@@ -94,11 +97,12 @@ impl PlayerState {
 
 fn main() {
 	App::new()
+		.insert_resource(MaxEnemyCount(3))
 		.insert_resource(ClearColor(Color::srgb(0.04, 0.04, 0.04)))
 		.add_plugins(DefaultPlugins.set(WindowPlugin {
 			primary_window: Some(Window {
-				title: "Rust Invaders!".into(),
-				resolution: (598., 676.).into(),
+				title: "Replicating Silicon Invaders!".into(),
+				resolution: (1920., 900.).into(),
 				// position window (for tutorial)
 				// position: WindowPosition::At(IVec2::new(2780, 4900)),
 				..Default::default()
@@ -185,8 +189,10 @@ fn movable_system(
 fn player_laser_hit_enemy_system(
 	mut commands: Commands,
 	mut enemy_count: ResMut<EnemyCount>,
+	mut max_enemy_count: ResMut<MaxEnemyCount>,
 	laser_query: Query<(Entity, &Transform, &SpriteSize), (With<Laser>, With<FromPlayer>)>,
-	enemy_query: Query<(Entity, &Transform, &SpriteSize), With<Enemy>>,
+	enemy_query: Query<(Entity, &Transform, &SpriteSize, &QuestionOption), With<Enemy>>,
+	mut exercise: ResMut<Exercise>,
 ) {
 	let mut despawned_entities: HashSet<Entity> = HashSet::new();
 
@@ -199,7 +205,7 @@ fn player_laser_hit_enemy_system(
 		let laser_scale = laser_tf.scale.xy();
 
 		// iterate through the enemies
-		for (enemy_entity, enemy_tf, enemy_size) in enemy_query.iter() {
+		for (enemy_entity, enemy_tf, enemy_size, question_option) in enemy_query.iter() {
 			if despawned_entities.contains(&enemy_entity)
 				|| despawned_entities.contains(&laser_entity)
 			{
@@ -221,9 +227,30 @@ fn player_laser_hit_enemy_system(
 			// perform collision
 			if collision {
 				// remove the enemy
-				commands.entity(enemy_entity).despawn();
-				despawned_entities.insert(enemy_entity);
-				enemy_count.0 -= 1;
+				log::info!("enemy question marker: {:?}", question_option);
+				if exercise.check(&question_option.0) {
+					enemy_query.iter().for_each(|e| {
+						despawn_enemy(
+							&mut commands,
+							&mut enemy_count,
+							&mut despawned_entities,
+							e.0,
+						);
+					});
+
+					max_enemy_count.0 = 2;
+					exercise.next();
+				} else {
+					despawn_enemy(
+						&mut commands,
+						&mut enemy_count,
+						&mut despawned_entities,
+						enemy_entity,
+					);
+					if max_enemy_count.0 < MAX_ENEMY {
+						max_enemy_count.0 += 1;
+					}
+				}
 
 				// remove the laser
 				commands.entity(laser_entity).despawn();
@@ -234,6 +261,17 @@ fn player_laser_hit_enemy_system(
 			}
 		}
 	}
+}
+
+fn despawn_enemy(
+	commands: &mut Commands,
+	enemy_count: &mut ResMut<EnemyCount>,
+	despawned_entities: &mut HashSet<Entity>,
+	enemy_entity: Entity,
+) {
+	commands.entity(enemy_entity).despawn_recursive();
+	despawned_entities.insert(enemy_entity);
+	enemy_count.0 -= 1;
 }
 
 #[allow(clippy::type_complexity)] // for the Query types.

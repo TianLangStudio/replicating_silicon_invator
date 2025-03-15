@@ -1,7 +1,8 @@
 use self::formation::{Formation, FormationMaker};
 use crate::components::{Enemy, FromEnemy, Laser, Movable, SpriteSize, Velocity};
 use crate::{
-	EnemyCount, GameTextures, WinSize, ENEMY_LASER_SIZE, ENEMY_MAX, ENEMY_SIZE, SPRITE_SCALE,
+	EnemyCount, GameTextures, MaxEnemyCount, WinSize, ENEMY_LASER_SIZE, ENEMY_SIZE,
+	SPRITE_SCALE,
 };
 
 use bevy::prelude::*;
@@ -26,10 +27,11 @@ fn enemy_spawn_system(
 	mut commands: Commands,
 	game_textures: Res<GameTextures>,
 	mut enemy_count: ResMut<EnemyCount>,
+	mut max_enemy_count: Res<MaxEnemyCount>,
 	mut formation_maker: ResMut<FormationMaker>,
 	win_size: Res<WinSize>,
 ) {
-	if enemy_count.0 < ENEMY_MAX {
+	if enemy_count.0 < max_enemy_count.0 {
 		// get formation and start x/y
 		let formation = formation_maker.make(&win_size);
 		let (x, y) = formation.start;
@@ -52,7 +54,7 @@ fn enemy_spawn_system(
 }
 
 fn enemy_fire_criteria() -> bool {
-	thread_rng().gen_bool(1. / 60.)
+	thread_rng().gen_bool(1. / 600.)
 }
 
 fn enemy_fire_system(

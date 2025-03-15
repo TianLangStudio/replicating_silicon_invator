@@ -33,19 +33,19 @@ impl FormationMaker {
 				let mut rng = thread_rng();
 
 				// compute the start x/y
-				let w_span = win_size.w / 2. + 100.;
-				let h_span = win_size.h / 2. + 100.;
-				let x = if rng.gen_bool(0.5) { w_span } else { -w_span };
+				let w_span = win_size.w  - 200.;
+				let h_span = win_size.h  - 100.;
+				let x = if rng.gen_bool(0.3) { w_span } else { -w_span };
 				let y = rng.gen_range(-h_span..h_span);
 				let start = (x, y);
 
 				// compute the pivot x/y
-				let w_span = win_size.w / 4.;
-				let h_span = win_size.h / 3. - 50.;
+				let w_span = win_size.w / 3.;
+				let h_span = win_size.h / 2. - 50.;
 				let pivot = (rng.gen_range(-w_span..w_span), rng.gen_range(0.0..h_span));
 
 				// compute the radius
-				let radius = (rng.gen_range(80.0..150.), 100.);
+				let radius = (rng.gen_range(120.0..150.), 100.);
 
 				// compute the start angle
 				let angle = (y - pivot.1).atan2(x - pivot.0);
