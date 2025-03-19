@@ -86,7 +86,7 @@ fn enemy_movement_system(
 	time: Res<Time>,
 	mut query: Query<(&mut Transform, &mut Formation), With<Enemy>>,
 ) {
-	let delta = time.delta_secs();
+	let delta = time.delta_secs()/2.0;
 
 	for (mut transform, mut formation) in &mut query {
 		// current position
