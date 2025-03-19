@@ -6,7 +6,7 @@
 
 This repository was forked from [rust-invaders](https://github.com/jeremychone-channel/rust-invaders) and added some features for English learning. 
 
-![](D:\code\github\rust\rust-invaders\docs\screenshot\screenshot.png)
+![screenshot](./docs/screenshot/screenshot.png)
 
 特别感谢：
 
